@@ -1,0 +1,337 @@
+*vut.txt*     Vim Universal Templates  Last change: 2004 Aug 30 
+
+			   Vim Universal Templates
+			     by Mikolaj Machowski
+			   ( mikmach AT wp DOT pl )
+
+*vut*
+
+VUT is Vim implementation of Macromedia Dreamweaver(tm) templates and
+libraries. Templates make possible to share the same document template across
+whole project, libraries allow for sharing the same snippet of code in many
+documents. This plugin makes possible to commit and update code from
+repositories and take care about file paths in links and image tags, always
+changing them to be relative to currently edited file.
+
+VUT doesn't provide immediate way to propagate changes across whole site.
+There is too many ways to maintain project in Vim. From session files, through
+project plugins from vim-online to simple file with list of files and opening
+it with "vim `cat fileslist`".
+
+All commands work nice with |:argdo|, |:windo|, |:bufdo| set of commands.
+But you have to run ":argdo VUTupdate" twice. First time will be for setting
+template source.
+
+1. Templates                             |vut-templates|
+   1.1. Creating template                |vut-create-template|
+	Inserting region template        |vut-insert-template|
+   1.2. Creating document from template  |vut-create-document|
+   1.3. Commiting template               |vut-commit-template|
+   1.4. Updating template                |vut-update-template|
+   1.5. Strip template tags              |vut-strip-template|
+   1.6. Checking regions names           |vut-check-regions|
+2. Libraries                             |vut-libraries|
+   2.1. Creating library                 |vut-create-library|
+        Inserting library template       |vut-insert-library|
+   2.2. Checkouting library              |vut-checkout-library|
+   2.3. Commiting library                |vut-commit-library|
+   2.4. Updating library                 |vut-update-library|
+   2.5. Strip library tags               |vut-strip-library|
+3. Various
+   3.1. Show resources                   |vut-show|
+   3.2. Variables                        |vut-variables|
+        Begin of comment                 |b:vut_bcom|
+        End of comment                   |b:vut_ecom|
+
+==============================================================================
+1. Templates                             *vut-templates*
+
+1.1. Creating template                   *vut-create-template*
+
+At the beginning you have to prepare project by creating file index.htmlmain
+at the root level of your site project and directory "Templates" (Note big
+T at the beginning).
+
+The easiest way to create template is to write a html document. After finishing
+example choose regions which should be different on various pages of your
+site. This regions enclose in tags: >
+	<!-- #BeginEditable "regionname" -->
+
+	<!-- #EndEditable -->
+
+Note: regionname MUST be unique in your document, when there will be more than
+one region of the same name only contents of the first will be saved.
+
+Note: Region name MUST follow Vim variable name specification: variable name
+can be made up of letters, digits and '_'.  But it cannot start with a digit.
+
+                                         *vut-regionname-format*
+Opening tag of editable region MUST follow specification: >
+	^\s*<!-- #BeginEditable "[A-Za-z_][A-Za-z0-9_]*" -->\s*$'
+
+All tags have to be in separate lines.
+
+                            *:VUTinsert* *:VHTinsert* *vut-insert-template*
+:VUTinsert [{regionname}]
+:VHTinsert [{regionname}]
+Easy way to insert region template is to use |:VUTinsert| command. Example: >
+	:VUTinsert regionname
+
+It will check if region name is properly declared and put below cursor
+position:
+	<!-- #BeginEditable "regionname" --> ~
+	<!-- #EndEditable --> ~
+With cursor on first line. If you don't declare name only "" will be printed.
+
+Paths to files in <img> and <a> tags should be relative to current file.
+
+After finishing it issue a command: >
+	:VUTcommit template1
+File, without regions marked as editable will be written to file
+"Templates/template1.vht" (counting from level of index.vutmain file). 
+Great! You created your first Vim template.
+
+Note: In Dreamweaver template files have extension .dwt . Because VUT isn't
+100% compatible (especially region names limitations) there is no direct
+support for .dwt files.
+
+All template operations have built-in security checks for region name
+specification. You can check it separately with |:VUTcheck| command.
+
+------------------------------------------------------------------------------
+1.2. Creating document from template     *vut-create-document*
+
+:VUTcheckout [{tmplname}]                *:VUTcheckout*
+:VHTcheckout [{tmplname}]                *:VHTcheckout*
+	Now, when you have template you probably want to create new files
+	which base on it. Create new html file, and enter: >
+	    :VUTcheckout template1
+<       Done. VUT will load template and adjust file paths.
+
+	You can also give only ":VUTcheckout", VUT will show list of templates
+	from Templates dir: >
+	    You didn't specify Template name.
+	    Enter name of template -
+	    template1
+	    (<Enter> to abandon action): 
+
+------------------------------------------------------------------------------
+1.3. Commiting template                  *vut-commit-template*
+
+:VUTcommit [{tmplname}]                  *:VUTcommit*
+:VHTcommit [{tmplname}]                  *:VHTcommit*
+	Sometimes you want to change template and make this changes available
+	in other file (or create new one). Do this with known command: >
+	    :VUTcommit
+<       Now, here is little trick. Plugin not always know with which template
+	file is associated. If you didn't perform any template action
+	previously you will be asked for name of template: >
+	    You didn't specify Template name.
+	    Enter name of existing template -
+	    template1
+	    Or a new one (<Enter> to abandon action): 
+<
+	Name of template is stored in b:vhtemplate variable (local to current
+	buffer - |b:var|).
+
+------------------------------------------------------------------------------
+1.4. Updating file                       *vut-update-template*
+
+:VUTupdate [{tmplname}]                  *:VUTupdate*
+:VHTupdate [{tmplname}]                  *:VHTupdate*
+	After making change in template it is good to update other files dependant on
+	this template. Example: >
+	    :VUTupdate template1
+<
+	When you call command without argument, two things can happen depending on
+	existence of b:vhtemplate variable. If it exists, VUT will update file
+	automatically from this template. If not, you will see know prompt: >
+	    You didn't specify Template name.
+	    Enter name of template -
+	    template1
+	    (<Enter> to abandon action): 
+
+What will happen when update will be done from template not on which file was
+based? New template will be load and old regions will be stored in variables
+like b:vht_regionname. You can put them in desired locations. Note: if in new
+template are the same region names like in the old one regions will be
+automatically pasted there. This is a good idea to keep region names the same
+for most important things like - doctitle, content, footer, etc. In this way
+even changing to completely different template, content will be placed in
+proper place.
+------------------------------------------------------------------------------
+1.5. Strip template tags                 *vut-strip-template*
+
+:VUTstrip {all}                          *:VUTstrip*
+:VHTstrip {all}                          *:VHTstrip*
+	This command will remove editable region tags from document. Used
+	without argument will remove tags of current or last editable region.
+	With {all} argument will remove all tags from current document. This
+	command removes only tags, not lines to preserve line positions.
+------------------------------------------------------------------------------
+1.6. Checking regions names              *vut-check-regions*
+
+:VUTcheck                                *:VUTcheck*
+:VHTcheck                                *:VHTcheck*
+        With this command you check if you declared region names properly: >
+	    :VUTcheck
+<       If there are any wrong region names like
+	    <!-- #BeginEditable "This is header" --> ~
+	(spaces are not allowed in region names)
+	You will get message:
+	    Not all editable regions were safely declared. List of them: ~
+	     54:    <!-- #BeginEditable "This is header" --> ~
+	    End of operation. ~
+
+==============================================================================
+2. Libraries                             *vut-libraries*
+
+2.1. Creating library                    *vut-create-library*
+
+When you want to share some piece of HTML between many files, you want
+Library. This is a piece of code placed between tags: >
+	<!-- #BeginLibraryItem "libitem.vhl" -->
+
+	<!-- #EndLibraryItem -->
+
+"libitem.vhl" is a path to library item relative to index.htmlmain file It can be: >
+	<!-- #BeginLibraryItem "libitem.vhl" -->
+	<!-- #BeginLibraryItem "Library/libitem.vhl" -->
+	<!-- #BeginLibraryItem "/Library/libitem.vhl" -->
+
+"Library" is a default path to look for files with extensions .vhl and .lbi
+(Dreamweaver) and good idea to store many pieces of code and not clutter main
+directory. VUT also accepts things like: >
+	<!-- #BeginLibraryItem "~/Library/libitem.vhl" -->
+
+For global library from home directory (may work only under *nix). 
+
+After closing region in mentioned tags place cursor somewhere between them
+and type command: >
+	:VULcommit
+It will write library item to its destination declared in opening tag.
+
+                             *:VULinsert* *:VHLinsert* *vut-insert-library*
+:VULinsert [{libname}]
+:VHLinsert [{libname}]
+Easy way to insert library template is to use |:VULinsert| command. Example: >
+	:VULinsert libname
+
+It will check if region name is properly declared and put below cursor
+position:
+	<!-- #BeginLibraryItem "libname" --> ~
+	<!-- #EndLibraryItem --> ~
+With cursor on first line. If you don't declare name only "" will be printed.
+
+Command will check if libname has '.vhl' extension and add it automatically if
+not.
+------------------------------------------------------------------------------
+2.2. Checkouting library                 *vut-checkout-library*
+
+:VULcheckout [{libpath}]                 *:VULcheckout*
+:VHLcheckout [{libpath}]                 *:VHLcheckout*
+	To insert library item at cursor position you need: >
+	    :VULcheckout
+<       You will get list of existing library items (files with extensions .vhl and
+	.lbi) in directories of index.htmlmain and Library at level of
+	.htmlmain file.  Insert _full_ shown path with extension: >
+	    You didn't specify Library path.
+	    Enter path to existing library -
+	    test.vhl
+	    Library/libitem.vhl
+	    (<Enter> to abandon action): 
+<
+	In this case you should enter "test.vhl" or "Library/libitem.vhl"
+
+------------------------------------------------------------------------------
+2.3. Commiting library                   *vut-commit-library*
+
+:VULcheckout [{libpath}]                 *:VULcheckout*
+:VHLcommit [ all ]                       *:VHLcommit*
+	When you made changes to library item and want to make those changes
+	available to other files type: >
+	    :VULcommit
+<       This will find current or last library item and commit changes to
+        "repository".
+
+	If you want to commit all library items in current document type: >
+	    :VULcommit all
+
+------------------------------------------------------------------------------
+2.4. Updating library                    *vut-update-library*
+
+:VULupdate [ all ][{libpath}]            *:VULupdate*
+:VHLupdate [ all ][{libpath}]            *:VHLupdate*
+        When you want to update library item type: >
+	    :VULupdate
+<       This will find current or last library item and make changes to
+	"repository".
+	If you want update all library items in current document enter: >
+	    :VULupdate all
+<       You can also update only chosen library. Give {libpath} as an argument
+	and only this library will be updated: >
+	    :VULupdate libpath
+<       Very useful in connection with |:argdo|, |:bufdo| commands.
+
+------------------------------------------------------------------------------
+2.5. Strip library  tags                 *vut-strip-library*
+
+:VULstrip {all}                          *:VULstrip*
+:VHLstrip {all}                          *:VHLstrip*
+	This command will remove tags of libraries from document. Used
+	without argument will remove tags of current or last library.
+	With {all} argument will remove all tags from current document. This
+	command removes only tags, not lines to preserve line positions.
+
+==============================================================================
+3. Various
+
+3.1 Show resources                       *vut-show*
+
+Before using templates its good to see what you can use.
+
+:VUTshow                                 *:VUTshow*
+:VHTshow                                 *:VHTshow*
+	This command will show template which is currently assigned to your
+	document (NONE if there is no assigned template yet).
+                                        
+:VULshow                                 *:VULshow*
+:VHLshow                                 *:VHLshow*
+	This command will show libraries available in project.  Libraries are
+	files with extensions .vhl and .lbi in .htmlmain directory or Library
+	directory located there.
+
+3.2. Variables                           *vut-variables*
+
+Default comment signs are /* for beginning of tag and */ for end of tag.
+You can change them in |ftplugin| files by modification of two variables:
+|b:vut_bcom| and |b:vut_ecom|. Both variables had to be defined, and both have
+to have value other than ''.
+
+        Begin of comment                 *b:vut_bcom*
+This variable defines beginning of comment. Examples:
+For *ml:
+	let b:vut_bcom = '<!--' ~
+For tex:
+	let b:vut_bcom = '%%' ~
+For vim:
+	let b:vut_bcom = '"' ~
+
+        End of comment                   *b:vut_ecom*
+This variable defines end of comment. It has to be defined even if language
+doesn't require this. Examples:
+For *ml:
+	let b:vut_bcom = '-->' ~
+For tex:
+	let b:vut_bcom = '%%' ~
+For vim:
+	let b:vut_bcom = '---' ~
+
+Note TeX and VimL neither require neiter provide end comment but this is
+necessary for proper working of script. Avoid if possible special characters
+and characters outside of ASCII.
+
+Package provides small conf files for: html, xhtml, sgml, xml, vim, tex
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:
