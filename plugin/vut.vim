@@ -1,8 +1,8 @@
 " Universal Vim templates
 " Author: Mikolaj Machowski ( mikmach AT wp DOT pl )
 " License: GPL v. 2.0
-" Version: 1.0
-" Last_change: 1 sep 2004
+" Version: 1.2
+" Last_change: 3 Sep 2004
 "
 " GetLatestVimScripts: 1078 1 :AutoInstall: vut.vim
 " 
@@ -30,7 +30,7 @@ command! -nargs=? VUTcommit call VUT_Commit(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplTcheckout VUTupdate call VUT_Update(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplTcheckout VUTcheckout call VUT_Checkout(<q-args>)
 command! -nargs=? VUTstrip call VUT_Strip(<q-args>)
-command! -nargs=? VUTinsert call VUT_Insert(<q-args>)
+command! -nargs=? -range VUTinsert  <line1>,<line2>call VUT_Insert(<q-args>)
 
 " }}}
 " Libraries {{{
@@ -38,7 +38,8 @@ command! -nargs=? VULcommit call VUL_Commit(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplLcheckout VULupdate call VUL_Update(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplLcheckout VULcheckout call VUL_Checkout(<q-args>)
 command! -nargs=? VULstrip call VUL_Strip(<q-args>)
-command! -nargs=? VULinsert call VUL_Insert(<q-args>)
+command! -nargs=? -range VULinsert <line1>,<line2>call VUL_Insert(<q-args>)
+command! -nargs=1 -range VULadd <line1>,<line2>call VUL_Add(<q-args>)
 
 " }}}
 " Show available templates/libraries {{{
@@ -57,7 +58,7 @@ command! -nargs=? VHTcommit call VUT_Commit(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplTcheckout VHTupdate call VUT_Update(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplTcheckout VHTcheckout call VUT_Checkout(<q-args>)
 command! -nargs=? VHTstrip call VUT_Strip(<q-args>)
-command! -nargs=? VHTinsert call VUT_Insert(<q-args>)
+command! -nargs=? -range VHTinsert <line1>,<line2>call VUT_Insert(<q-args>)
 
 " }}}
 " Libraries {{{
@@ -65,7 +66,8 @@ command! -nargs=? VHLcommit call VUL_Commit(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplLcheckout VHLupdate call VUL_Update(<q-args>)
 command! -nargs=? -complete=custom,VUT_CmplLcheckout VHLcheckout call VUL_Checkout(<q-args>)
 command! -nargs=? VHLstrip call VUL_Strip(<q-args>)
-command! -nargs=? VHLinsert call VUL_Insert(<q-args>)
+command! -nargs=? -range VHLinsert <line1>,<line2>call VUL_Insert(<q-args>)
+command! -nargs=1 -range VHLadd <line1>,<line2>call VUL_Add(<q-args>)
 
 " }}}
 " Show available templates/libraries {{{
@@ -382,7 +384,7 @@ endfunction
 " }}}
 " VUT_Insert: insert template of editable region {{{
 " Description: 
-function! VUT_Insert(name)
+function! VUT_Insert(name) range
 
 	if a:name == '' || !exists("a:name")
 		let name = ''
@@ -400,10 +402,11 @@ function! VUT_Insert(name)
 	let beginline = b:vut_bcom.' #BeginEditable "'.name.'" '.b:vut_ecom
 	let endline = b:vut_bcom.' #EndEditable '.b:vut_ecom
 
-	put =beginline
+	exe 'normal! '.a:lastline.'G'
 	put =endline
 
-	normal! k
+	exe 'normal! '.a:firstline.'G'
+	put! =beginline
 
 	return
 
@@ -731,9 +734,9 @@ function! VUL_Strip(all)
 
 endfunction
 " }}}
-" VUL_Insert: insert template of editable region {{{
+" VUL_Insert: insert template of library region {{{
 " Description: 
-function! VUL_Insert(name)
+function! VUL_Insert(name) range
 
 	if a:name != '' && a:name !~ '\.vhl$'
 		let name = a:name.'.vhl'
@@ -746,10 +749,38 @@ function! VUL_Insert(name)
 	let beginline = b:vut_bcom.' #BeginLibraryItem "'.name.'" '.b:vut_ecom
 	let endline = b:vut_bcom.' #EndLibraryItem '.b:vut_ecom
 
-	put =beginline
+	exe 'normal! '.a:lastline.'G'
 	put =endline
 
-	normal! k
+	exe 'normal! '.a:firstline.'G'
+	put! =beginline
+
+	return
+
+endfunction
+" }}}
+" VUL_Add: insert template of library region and commit it immediately {{{
+" Description: 
+function! VUL_Add(name) range
+
+	if a:name != '' && a:name !~ '\.vhl$'
+		let name = a:name.'.vhl'
+
+	else
+		let name = a:name
+
+	endif
+
+	let beginline = b:vut_bcom.' #BeginLibraryItem "'.name.'" '.b:vut_ecom
+	let endline = b:vut_bcom.' #EndLibraryItem '.b:vut_ecom
+
+	exe 'normal! '.a:lastline.'G'
+	put =endline
+
+	exe 'normal! '.a:firstline.'G'
+	put! =beginline
+
+	call VUL_Commit('')
 
 	return
 

@@ -1,4 +1,4 @@
-*vut.txt*     Vim Universal Templates  Last change: 2004 Aug 30 
+*vut.txt*     Vim Universal Templates  Last change: 2004 Sep 3
 
 			   Vim Universal Templates
 			     by Mikolaj Machowski
@@ -37,6 +37,7 @@ template source.
    2.3. Commiting library                |vut-commit-library|
    2.4. Updating library                 |vut-update-library|
    2.5. Strip library tags               |vut-strip-library|
+   2.6. Add library item                 |vut-add-library|
 3. Various
    3.1. Show resources                   |vut-show|
    3.2. Variables                        |vut-variables|
@@ -264,8 +265,8 @@ not.
 ------------------------------------------------------------------------------
 2.4. Updating library                    *vut-update-library*
 
-:VULupdate [ all ][{libpath}]            *:VULupdate*
-:VHLupdate [ all ][{libpath}]            *:VHLupdate*
+:VULupdate [{all}][{libpath}]            *:VULupdate*
+:VHLupdate [{all}][{libpath}]            *:VHLupdate*
         When you want to update library item type: >
 	    :VULupdate
 <       This will find current or last library item and make changes to
@@ -280,12 +281,20 @@ not.
 ------------------------------------------------------------------------------
 2.5. Strip library  tags                 *vut-strip-library*
 
-:VULstrip {all}                          *:VULstrip*
-:VHLstrip {all}                          *:VHLstrip*
+:VULstrip [{all}]                        *:VULstrip*
+:VHLstrip [{all}]                        *:VHLstrip*
 	This command will remove tags of libraries from document. Used
 	without argument will remove tags of current or last library.
 	With {all} argument will remove all tags from current document. This
 	command removes only tags, not lines to preserve line positions.
+
+------------------------------------------------------------------------------
+2.6. Add library item                    *vut-add-library*
+
+:VULadd {libname}                        *:VULadd*
+:VHLadd {libname}                        *:VHLadd*
+	This command will enclose chosen |:range| in LibraryItem tags and
+	immediately commit it. {libname} argument is obligatory.
 
 ==============================================================================
 3. Various
@@ -323,7 +332,7 @@ For vim:
 
         End of comment                   *b:vut_ecom*
 This variable defines end of comment. It has to be defined even if language
-doesn't require this. Examples:
+doesn't require this element. Examples:
 For *ml:
 	let b:vut_bcom = '-->' ~
 For tex:
