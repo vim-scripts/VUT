@@ -188,7 +188,7 @@ proper place.
 
 2.1. Creating library                    *vut-create-library*
 
-When you want to share some piece of HTML between many files, you want
+When you want to share some piece of code between many files, you want
 Library. This is a piece of code placed between tags: >
 	<!-- #BeginLibraryItem "libitem.vhl" -->
 
@@ -197,7 +197,7 @@ Library. This is a piece of code placed between tags: >
 "libitem.vhl" is a path to library item relative to index.htmlmain file It can be: >
 	<!-- #BeginLibraryItem "libitem.vhl" -->
 	<!-- #BeginLibraryItem "Library/libitem.vhl" -->
-	<!-- #BeginLibraryItem "/Library/libitem.vhl" -->
+	<!-- #BeginLibraryItem "../Library/libitem.vhl" -->
 
 "Library" is a default path to look for files with extensions .vhl and .lbi
 (Dreamweaver) and good idea to store many pieces of code and not clutter main
@@ -205,6 +205,8 @@ directory. VUT also accepts things like: >
 	<!-- #BeginLibraryItem "~/Library/libitem.vhl" -->
 
 For global library from home directory (may work only under *nix). 
+Since VUT can serve for many types of files it is sensible to store them
+in filetype dependent directories.
 
 After closing region in mentioned tags place cursor somewhere between them
 and type command: >
@@ -242,6 +244,8 @@ not.
 	    (<Enter> to abandon action): 
 <
 	In this case you should enter "test.vhl" or "Library/libitem.vhl"
+	VUT looks for files also in ~/Library and ~/Library/&filetype
+        directories.
 
 ------------------------------------------------------------------------------
 2.3. Commiting library                   *vut-commit-library*

@@ -2,7 +2,9 @@
 " Author: Mikolaj Machowski ( mikmach AT wp DOT pl )
 " License: GPL v. 2.0
 " Version: 1.0
-" Last_change: 30 aug 2004
+" Last_change: 1 sep 2004
+"
+" GetLatestVimScripts: 1078 1 :AutoInstall: vut.vim
 " 
 " Replica of DreamWeaver(tm) templates and libraries.
 
@@ -24,44 +26,17 @@ let b:vut_ecom = '*/'
 " Commands
 " ======================================================================
 " Templates {{{
-command! -nargs=? VHTcommit call VUT_Commit(<q-args>)
-command! -nargs=? VHTupdate call VUT_Update(<q-args>)
-command! -nargs=? VHTcheckout call VUT_Checkout(<q-args>)
-command! -nargs=? VHTstrip call VUT_Strip(<q-args>)
-command! -nargs=? VHTinsert call VUT_Insert(<q-args>)
-
-" }}}
-" Libraries {{{
-command! -nargs=? VHLcommit call VUL_Commit(<q-args>)
-command! -nargs=? VHLupdate call VUL_Update(<q-args>)
-command! -nargs=? VHLcheckout call VUL_Checkout(<q-args>)
-command! -nargs=? VHLstrip call VUL_Strip(<q-args>)
-command! -nargs=? VHLinsert call VUL_Insert(<q-args>)
-
-" }}}
-" Show available templates/libraries {{{
-command! -nargs=0 VHTshow call VUT_Show("templates")
-command! -nargs=0 VHLshow call VUT_Show("libraries")
-
-" }}}
-" Check if editable regions are properly declared {{{
-command! -nargs=0 VHTcheck echo VUT_Check()
-
-" }}}
-
-" VUT versions {{{
-" Templates {{{
 command! -nargs=? VUTcommit call VUT_Commit(<q-args>)
-command! -nargs=? VUTupdate call VUT_Update(<q-args>)
-command! -nargs=? VUTcheckout call VUT_Checkout(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplTcheckout VUTupdate call VUT_Update(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplTcheckout VUTcheckout call VUT_Checkout(<q-args>)
 command! -nargs=? VUTstrip call VUT_Strip(<q-args>)
 command! -nargs=? VUTinsert call VUT_Insert(<q-args>)
 
 " }}}
 " Libraries {{{
 command! -nargs=? VULcommit call VUL_Commit(<q-args>)
-command! -nargs=? VULupdate call VUL_Update(<q-args>)
-command! -nargs=? VULcheckout call VUL_Checkout(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplLcheckout VULupdate call VUL_Update(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplLcheckout VULcheckout call VUL_Checkout(<q-args>)
 command! -nargs=? VULstrip call VUL_Strip(<q-args>)
 command! -nargs=? VULinsert call VUL_Insert(<q-args>)
 
@@ -73,6 +48,33 @@ command! -nargs=0 VULshow call VUT_Show("libraries")
 " }}}
 " Check if editable regions are properly declared {{{
 command! -nargs=0 VUTcheck echo VUT_Check()
+
+" }}}
+
+" VHT versions {{{
+" Templates {{{
+command! -nargs=? VHTcommit call VUT_Commit(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplTcheckout VHTupdate call VUT_Update(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplTcheckout VHTcheckout call VUT_Checkout(<q-args>)
+command! -nargs=? VHTstrip call VUT_Strip(<q-args>)
+command! -nargs=? VHTinsert call VUT_Insert(<q-args>)
+
+" }}}
+" Libraries {{{
+command! -nargs=? VHLcommit call VUL_Commit(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplLcheckout VHLupdate call VUL_Update(<q-args>)
+command! -nargs=? -complete=custom,VUT_CmplLcheckout VHLcheckout call VUL_Checkout(<q-args>)
+command! -nargs=? VHLstrip call VUL_Strip(<q-args>)
+command! -nargs=? VHLinsert call VUL_Insert(<q-args>)
+
+" }}}
+" Show available templates/libraries {{{
+command! -nargs=0 VHTshow call VUT_Show("templates")
+command! -nargs=0 VHLshow call VUT_Show("libraries")
+
+" }}}
+" Check if editable regions are properly declared {{{
+command! -nargs=0 VHTcheck echo VUT_Check()
 
 " }}}
 " }}}
@@ -104,8 +106,6 @@ function! VUT_Commit(tmplname)
 		return
 	endif
 		
-	let g:asdf = "asdf"
-
 	" Save current position
 	let sline = line('.')
 	let cpos = line(".") . " | normal!" . virtcol(".") . "|"
@@ -580,7 +580,7 @@ function! VUL_Update(libitem)
 		" Something is wrong with pathname. Abort now!
 		call VUT_CD(curd)
 		silent exe cpos
-		echomsg "VHL: Can't find this Library - check path."
+		echomsg "VUL: Can't find this Library - check path."
 
 		return
 
@@ -867,15 +867,21 @@ endif
 " Description: cd to template/library dir and get list of files, remove
 " extensions
 function! VUT_ListFiles(vutdir, ext)
+	let relfilelist = ''
 	let curd = getcwd()
 	call VUT_CD(a:vutdir)
 	if a:ext == 'vht'
 		let filelist = glob("*")
 		let filelist = substitute(filelist, '\.vht', '', 'ge')
 	elseif a:ext == 'vhl'
-		let filelist = globpath(".,Library,$HOME/Library/", '*.\(vhl\|lbi\)')
-		let filelist = substitute(filelist, '\(^\|\n\)\..', '\1', 'ge')
+		" Have to create relative path to global Lib dir to get rel
+		" paths to libs there
+		let reldir = VUT_RelPath($HOME."/Library", expand('%:p'))
+		let filelist = globpath(".,Library,".reldir.",".reldir.&ft, '*.\(vhl\|lbi\)')
+		let filelist = substitute(filelist, '\(^\|\n\)\.[^.]', '\1', 'ge')
+
 	endif
+
 	call VUT_CD(curd)
 	return filelist
 endfunction
@@ -1086,5 +1092,35 @@ function! VUT_RelPath(explfilename,texfilename)
 	let relpath = subrelpath.path1
 	return escape(VUT_NormalizePath(relpath), ' ')
 endfunction " }}}
+" VUT_Strntok: extract the n^th token from a list {{{
+" example: VUT_Strntok('1,23,3', ',', 2) = 23
+function! VUT_Strntok(s, tok, n)
+	return matchstr( a:s.a:tok[0], '\v(\zs([^'.a:tok.']*)\ze['.a:tok.']){'.a:n.'}')
+endfunction
+
+" }}}
+" VUT_Cmplxxxx: Completion functions {{{
+function! VUT_CmplLcheckout(a,b,c)
+	let vutdir = VUT_GetMainFileName(":p:h")
+	return VUT_ListFiles(vutdir, 'vhl')
+
+endfunction
+
+function! VUT_CmplTcheckout(a,b,c)
+	let vutlevel = VUT_GetMainFileName(":p:h")
+	if isdirectory(vutlevel.'/Templates/') != 0
+		let vutdir = vutlevel.'/Templates/'
+
+	else
+		echomsg "VUT: Templates directory doesn't exist. Create it!"
+		return
+
+	endif
+
+	return VUT_ListFiles(vutdir, 'vht')
+	
+endfunction
+
+" }}}
 
 " vim:fdm=marker:ff=unix:noet:ts=4:sw=4:nowrap
